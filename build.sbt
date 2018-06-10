@@ -16,7 +16,7 @@ scalacOptions ++= Seq(
   "-language:postfixOps",
   "-language:implicitConversions",
   "-Ywarn-unused-import",
-  "-Xfatal-warnings",
+  //"-Xfatal-warnings",
   "-Xlint:_",
   //
   // resolve apparent proguard collision
