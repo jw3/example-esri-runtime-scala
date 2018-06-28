@@ -16,9 +16,9 @@ import scala.concurrent.Promise
 object Streaming {
   def connect(o: GraphicsOverlay, to: String)(implicit sys: ActorSystem): Promise[Option[Message]] = {
     implicit val mat = ActorMaterializer()
-    val a = sys.actorOf(OverlayActor.props(o))
-    val sink = Sink.actorRef(a, Done)
+    val overlay = sys.actorOf(OverlayActor.props(o))
     val source = Source.maybe[Message]
+    val sink = Sink.actorRef(overlay, Done)
     val wsr = WebSocketRequest(to)
 
     val flow = Flow.fromSinkAndSourceMat(sink, source)(Keep.right)
