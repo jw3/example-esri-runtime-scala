@@ -24,7 +24,11 @@ scalacOptions ++= Seq(
 )
 
 libraryDependencies ++= Seq(
+  // misc
+  "com.iheart" %% "ficus" % "1.4.3",
   "com.esri.arcgisruntime" % "arcgis-java" % "100.2.1",
+  "com.github.jw3" %% "geotrellis-vector" % "12.2.0.0",
+  "com.github.jw3" %% "geotrellis-slick" % "12.2.0.0",
   // akka
   "com.typesafe.akka" %% "akka-actor" % "2.5.12",
   "com.typesafe.akka" %% "akka-stream" % "2.5.12",
