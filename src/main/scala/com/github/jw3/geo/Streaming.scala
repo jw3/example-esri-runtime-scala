@@ -1,16 +1,16 @@
 package com.github.jw3.geo
 
 import akka.Done
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import com.esri.arcgisruntime.geometry.Point
+import com.esri.arcgisruntime.geometry.{Point, SpatialReferences}
 import com.esri.arcgisruntime.mapping.view.{Graphic, GraphicsOverlay}
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol
+import com.github.jw3.geo.GraphicActor.MoveTo
 
-import scala.collection.mutable
 import scala.concurrent.Promise
 
 object Streaming {
@@ -28,26 +28,53 @@ object Streaming {
 
 object OverlayActor {
   def props(o: GraphicsOverlay) = Props(new OverlayActor(o))
+
+  def gid(id: String): String = s"g$id"
 }
 
 class OverlayActor(o: GraphicsOverlay) extends Actor {
-  private val locationGraphics = mutable.Map[String, Graphic]()
-  private val locationMarker = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, -0x10000, 10f)
-
   def receive: Receive = {
     case TextMessage.Strict(encoded) ⇒
-      import com.esri.arcgisruntime.geometry.SpatialReferences
       val split = encoded.split(":")
       val id = split(0)
       val x = split(1).toDouble
       val y = split(2).toDouble
-      val pt = new Point(x, y, SpatialReferences.getWgs84)
 
-      if (!locationGraphics.contains(id)) {
-        val g = new Graphic(pt, locationMarker)
-        locationGraphics(id) = g
-        o.getGraphics.add(g)
-      }
-      locationGraphics(id).setGeometry(pt)
+      graphicOf(id) ! GraphicActor.MoveTo(x, y)
   }
+
+  def graphicOf(id: String): ActorRef = {
+    context.child(OverlayActor.gid(id)) match {
+      case Some(ref) ⇒ ref
+      case None ⇒ context.actorOf(GraphicActor.props(id, o), OverlayActor.gid(id))
+    }
+  }
+}
+
+object GraphicActor {
+  def props(id: String, o: GraphicsOverlay) = Props(new GraphicActor(id, o))
+
+  val defaultMarker = new SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, -0x10000, 10f)
+
+  case class MoveTo(x: Double, y: Double)
+}
+
+class GraphicActor(id: String, o: GraphicsOverlay) extends Actor with ActorLogging {
+  private val sr = SpatialReferences.getWgs84
+
+  def unlocated: Receive = {
+    case MoveTo(x, y) ⇒
+      val pt = new Point(x, y, sr)
+      val g = new Graphic(pt, GraphicActor.defaultMarker)
+
+      o.getGraphics.add(g)
+      context.become(positioned(g))
+  }
+
+  def positioned(g: Graphic): Receive = {
+    case MoveTo(x, y) ⇒
+      g.setGeometry(new Point(x, y, sr))
+  }
+
+  def receive: Receive = unlocated
 }
