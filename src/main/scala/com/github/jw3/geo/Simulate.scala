@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
-import akka.stream.Materializer
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import geotrellis.vector.Geometry
 import geotrellis.vector.io.json.Implicits._
@@ -19,33 +19,34 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Random, Success}
 
-object RideAlong {
+object Simulate extends App {
+  implicit val system = ActorSystem()
+  implicit val mat = ActorMaterializer()
 
-  def simulate()(implicit sys: ActorSystem, mat: Materializer) = {
-    Source
-      .fromIterator(
-        () ⇒
-          GeoJson
-            .fromFile[JsonFeatureCollection]("/tmp/vector.geojson")
-            .getAllMultiLines()
-            .iterator
-      )
-      .map(ml ⇒ id → ml)
-      .mapAsync(1) { t ⇒
-        add(t._1).map(_ ⇒ t)
+  Source
+    .fromIterator(
+      () ⇒
+        GeoJson
+          .fromFile[JsonFeatureCollection]("/tmp/vector.geojson")
+          .getAllMultiLines()
+          .iterator
+    )
+    .map(ml ⇒ id → ml)
+    .mapAsync(1) { t ⇒
+      add(t._1).map(_ ⇒ t)
+    }
+    .flatMapMerge(
+      10, { t ⇒
+        Source
+          .fromIterator(() ⇒ t._2.lines.flatMap(_.points).iterator)
+          .map(pt ⇒ HookCall("sim", s"${pt.y}:${pt.x}", t._1, "now"))
+          .throttle(Random.nextInt(20) + 10, FiniteDuration(Random.nextInt(60), TimeUnit.SECONDS))
       }
-      .flatMapMerge(
-        10, { t ⇒
-          Source
-            .fromIterator(() ⇒ t._2.lines.flatMap(_.points).iterator)
-            .map(pt ⇒ HookCall("sim", s"${pt.y}:${pt.x}", t._1, "now"))
-            .throttle(Random.nextInt(20) + 10, FiniteDuration(Random.nextInt(60), TimeUnit.SECONDS))
-        }
-      )
-      .runWith(move)
-  }
+    )
+    .runWith(move)
+
   def id() = UUID.randomUUID.toString.take(8)
-  def add(id: String)(implicit sys: ActorSystem): Future[HttpResponse] = {
+  def add(id: String): Future[HttpResponse] = {
     val f = Http().singleRequest(HttpRequest(HttpMethods.POST, s"http://localhost:9000/api/device/$id"))
     f.onComplete {
       case Success(_) ⇒ println(id)
@@ -54,7 +55,7 @@ object RideAlong {
     }
     f
   }
-  def move()(implicit sys: ActorSystem): Sink[HookCall, _] = {
+  def move(): Sink[HookCall, _] = {
     Sink.foreach[HookCall] { call ⇒
       //'{coreid: env.ID, event: env.EVENT, published_at: "now", data: env.POS}'
       Http()
