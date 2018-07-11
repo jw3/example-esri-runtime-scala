@@ -29,6 +29,7 @@ libraryDependencies ++= Seq(
   "com.esri.arcgisruntime" % "arcgis-java" % "100.2.1",
   "com.github.jw3" %% "geotrellis-vector" % "12.2.0.0",
   "com.github.jw3" %% "geotrellis-slick" % "12.2.0.0",
+  "org.julienrf" % "play-json-derived-codecs_2.12" % "4.0.0",
   // akka
   "com.typesafe.akka" %% "akka-actor" % "2.5.12",
   "com.typesafe.akka" %% "akka-stream" % "2.5.12",
