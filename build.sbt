@@ -23,10 +23,13 @@ scalacOptions ++= Seq(
   "-Yresolve-term-conflict:object"
 )
 
+val arcgisVersion = "100.8.0"
 libraryDependencies ++= Seq(
   // misc
   "com.iheart" %% "ficus" % "1.4.3",
-  "com.esri.arcgisruntime" % "arcgis-java" % "100.2.1",
+  "com.esri.arcgisruntime" % "arcgis-java" % arcgisVersion,
+  "com.esri.arcgisruntime" % "arcgis-java-jnilibs" % arcgisVersion,
+  "com.esri.arcgisruntime" % "arcgis-java-resources" % arcgisVersion,
   "com.github.jw3" %% "geotrellis-vector" % "12.2.0.0",
   "com.github.jw3" %% "geotrellis-slick" % "12.2.0.0",
   "org.julienrf" % "play-json-derived-codecs_2.12" % "4.0.0",

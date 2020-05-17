@@ -6,7 +6,8 @@ https://developers.arcgis.com/java/latest/guide/guide.htm
 
 ### notes
 
-getting compile time error
+- Requires Java 11
+- Compile time error
 
 ```
 Error:(33, 22) package io contains object and package with same name: a
