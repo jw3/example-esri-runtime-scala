@@ -23,27 +23,27 @@ object Simulate extends App {
   implicit val system = ActorSystem()
   implicit val mat = ActorMaterializer()
 
+  val vector = args.headOption.getOrElse("/tmp/vector.geojson")
+  println(s"loading $vector")
+
   Source
     .fromIterator(
       () ⇒
         GeoJson
-          .fromFile[JsonFeatureCollection]("/tmp/vector.geojson")
+          .fromFile[JsonFeatureCollection](vector)
           .getAllMultiLines()
           .iterator
     )
     .map(ml ⇒ id → ml)
-    .mapAsync(1) { t ⇒
-      add(t._1).map(_ ⇒ t)
-    }
     .flatMapMerge(
       10, { t ⇒
         Source
           .fromIterator(() ⇒ t._2.lines.flatMap(_.points).iterator)
           .map(pt ⇒ HookCall("sim", s"${pt.y}:${pt.x}", t._1, "now"))
-          .throttle(Random.nextInt(20) + 10, FiniteDuration(Random.nextInt(60), TimeUnit.SECONDS))
+          .throttle(Random.nextInt(1) + 1, FiniteDuration(Random.nextInt(1), TimeUnit.SECONDS))
       }
     )
-    .runWith(move)
+    .runWith(Sink.foreach(println))
 
   def id() = UUID.randomUUID.toString.take(8)
   def add(id: String): Future[HttpResponse] = {

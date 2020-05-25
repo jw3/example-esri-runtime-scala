@@ -10,7 +10,6 @@ import com.esri.arcgisruntime.arcgisservices.LabelDefinition
 import com.esri.arcgisruntime.geometry.{Point, SpatialReferences}
 import com.esri.arcgisruntime.mapping.view.{Graphic, GraphicsOverlay}
 import com.esri.arcgisruntime.symbology.SimpleMarkerSymbol
-import com.github.jw3.geo.GraphicActor.MoveTo
 
 import scala.concurrent.Promise
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -69,7 +68,7 @@ object GraphicActor {
   val defaultLabelDefinition = """{
                                  |  "labelExpressionInfo":
                                  |  {
-                                 |    "expression": "$feature.lastUpdate"
+                                 |    "expression": "$feature.id"
                                  |  },
                                  |  "labelPlacement": "esriServerPointLabelPlacementAboveRight",
                                  |  "symbol":
@@ -93,6 +92,7 @@ class GraphicActor(id: String, o: GraphicsOverlay) extends Actor with Timers wit
     case MoveTo(x, y) ⇒
       val pt = new Point(x, y, sr)
       val g = new Graphic(pt, defaultMarker)
+      g.getAttributes.put("id", id)
 
       o.getLabelDefinitions.add(LabelDefinition.fromJson(defaultLabelDefinition))
       o.setLabelsEnabled(true)
