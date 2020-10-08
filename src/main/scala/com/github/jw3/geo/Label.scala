@@ -16,6 +16,10 @@ object Label {
           "symbol" → Symbol.format.writes(o.symbol)
         )
     )
+
+    implicit def toEsriLabelDef(l: Label.LabelDefinition): com.esri.arcgisruntime.arcgisservices.LabelDefinition = {
+      com.esri.arcgisruntime.arcgisservices.LabelDefinition.fromJson(Json.toJson(l).toString())
+    }
   }
 
   case class ExpressionInfo(expression: String)
@@ -49,6 +53,7 @@ object Label {
       sealed trait Placement extends LabelPlacement { def separator: String = "PointLabelPlacement" }
       case object AboveCenter extends Placement
       case object BelowCenter extends Placement
+      case object CenterStart extends Placement
       case object CenterCenter extends Placement
       case object AboveLeft extends Placement
       case object BelowLeft extends Placement
