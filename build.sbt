@@ -2,7 +2,7 @@ name := "example-esri-runtime-scala"
 organization := "com.github.jw3"
 
 version := "0.1"
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.12"
 
 resolvers += Resolver.bintrayRepo("esri", "arcgis")
 
@@ -23,7 +23,7 @@ scalacOptions ++= Seq(
   "-Yresolve-term-conflict:object"
 )
 
-val arcgisVersion = "100.8.0"
+val arcgisVersion = "100.9.0"
 libraryDependencies ++= Seq(
   // misc
   "com.iheart" %% "ficus" % "1.4.3",
